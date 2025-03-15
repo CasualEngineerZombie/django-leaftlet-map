@@ -24,24 +24,39 @@
     var currentUserId = "{{ current_user_id }}";
     
     users.forEach(function(user) {
-      var marker = L.marker([user.lat, user.lon]).addTo(map);
+      var marker;
+      // If an avatar exists, create a custom icon using it.
+      if (user.avatar) {
+        marker = L.marker([user.lat, user.lon], {
+          icon: L.icon({
+            iconUrl: '/media/' + user.avatar,
+            iconSize: [50, 50],      // Adjust size as needed
+            iconAnchor: [25, 50],    // Anchor so that the tip points at the exact location
+            popupAnchor: [0, -50]
+          })
+        }).addTo(map);
+      } else {
+        marker = L.marker([user.lat, user.lon]).addTo(map);
+      }
       markers.push(marker);
+      
       var popupContent = "<div class='text-sm'><b>" + user.name + "</b><br>Email: " + user.email + "<br>Number: " + user.number + "</div>";
       marker.bindPopup(popupContent);
+      
+      // Optionally, highlight the current user's marker with a red circle.
       if (String(user.id) === currentUserId) {
-        // Highlight the current user's marker with a red circle.
         L.circleMarker([user.lat, user.lon], {radius: 10, color: 'red'}).addTo(map);
       }
     });
     
-    // Adjust the map view to fit all markers.
+    // Adjust the map view to show all markers.
     if (markers.length > 0) {
       var group = new L.featureGroup(markers);
       map.fitBounds(group.getBounds().pad(0.2));
     }
   }
   
-  // Call the initialization function on first load.
+  // Initialize the map on first load.
   document.addEventListener("DOMContentLoaded", initializeAllUsersMap);
 </script>
 {% endblock %}

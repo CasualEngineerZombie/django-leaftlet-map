@@ -8,7 +8,7 @@ from .forms import UserLocationForm
 
 def user_create(request):
     if request.method == 'POST':
-        form = UserLocationForm(request.POST)
+        form = UserLocationForm(request.POST, request.FILES)
         if form.is_valid():
             user_location = form.save()
             # Prepare context for the homepage.
