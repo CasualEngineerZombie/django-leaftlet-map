@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white p-8 rounded shadow">
+  <h1 class="text-3xl font-bold mb-6">Add Your Location</h1>
+  <form method="post" hx-post="." hx-target="body" hx-swap="outerHTML" hx-push-url="true" class="space-y-6">
+    {% csrf_token %}
+    <div>
+      <label for="id_name" class="block text-sm font-medium text-gray-700">Name:</label>
+      {{ form.name }}
+    </div>
+    <div>
+      <label for="id_email" class="block text-sm font-medium text-gray-700">Email:</label>
+      {{ form.email }}
+    </div>
+    <div>
+      <label for="id_number" class="block text-sm font-medium text-gray-700">Number:</label>
+      {{ form.number }}
+    </div>
+    <!-- Hidden lat/lon fields; shown manually if needed -->
+    <div id="manual-coordinates" class="space-y-4" style="display: none;">
+      <div>
+        <label for="id_lat" class="block text-sm font-medium text-gray-700">Latitude:</label>
+        {{ form.lat }}
+      </div>
+      <div>
+        <label for="id_lon" class="block text-sm font-medium text-gray-700">Longitude:</label>
+        {{ form.lon }}
+      </div>
+    </div>
+    <!-- Spinner shown while retrieving location -->
+    <div id="spinner" class="text-center text-lg font-bold text-blue-600" style="display: none;">
+      Loading location...
+    </div>
+    
+    <div id="map" class="h-64 rounded shadow mb-6"></div>
+    <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">
+      Proceed and Submit
+    </button>
+  </form>
+  <div class="mt-4">
+    <a href="/" class="text-blue-600 hover:underline">← Back to Map</a>
+  </div>
+</div>
+
+<!-- Leaflet CSS and JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    var map = L.map('map').setView([0, 0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+    }).addTo(map);
+    
+    var marker;
+    function setMarker(lat, lon) {
+      if (marker) {
+        marker.setLatLng([lat, lon]);
+      } else {
+        marker = L.marker([lat, lon]).addTo(map);
+      }
+      map.setView([lat, lon], 15);
+      document.getElementById("id_lat").value = lat;
+      document.getElementById("id_lon").value = lon;
+    }
+
+    var spinner = document.getElementById("spinner");
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(function(position) {
+        spinner.style.display = "block";
+        // Simulate a delay to show the spinner before displaying the marker.
+        setTimeout(function() {
+          spinner.style.display = "none";
+          setMarker(position.coords.latitude, position.coords.longitude);
+        }, 2000);
+      }, function(error) {
+        // If permission denied or error, reveal manual input fields.
+        document.getElementById("manual-coordinates").style.display = "block";
+      });
+    } else {
+      document.getElementById("manual-coordinates").style.display = "block";
+    }
+
+    // Update marker when user clicks on the map.
+    map.on('click', function(e) {
+      setMarker(e.latlng.lat, e.latlng.lng);
+    });
+
+    // Listen for changes in manual lat/lon fields.
+    document.getElementById("id_lat").addEventListener("change", function() {
+      var lat = parseFloat(this.value);
+      var lon = parseFloat(document.getElementById("id_lon").value);
+      if (!isNaN(lat) && !isNaN(lon)) {
+        setMarker(lat, lon);
+      }
+    });
+    document.getElementById("id_lon").addEventListener("change", function() {
+      var lat = parseFloat(document.getElementById("id_lat").value);
+      var lon = parseFloat(this.value);
+      if (!isNaN(lat) && !isNaN(lon)) {
+        setMarker(lat, lon);
+      }
+    });
+  });
+</script>
+{% endblock %}

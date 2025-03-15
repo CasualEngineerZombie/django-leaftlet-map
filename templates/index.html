@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-4xl mx-auto bg-white p-8 rounded shadow">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-3xl font-bold">All Users on Map</h1>
+    <a href="/add/" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Add Your Location</a>
+  </div>
+  <div id="all-users-map" class="h-96 rounded shadow"></div>
+</div>
+
+<!-- Leaflet CSS and JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+  // Define the map initialization function.
+  function initializeAllUsersMap() {
+    var map = L.map('all-users-map').setView([0, 0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+    }).addTo(map);
+    
+    var markers = [];
+    var users = {{ users_json|safe }};
+    var currentUserId = "{{ current_user_id }}";
+    
+    users.forEach(function(user) {
+      var marker = L.marker([user.lat, user.lon]).addTo(map);
+      markers.push(marker);
+      var popupContent = "<div class='text-sm'><b>" + user.name + "</b><br>Email: " + user.email + "<br>Number: " + user.number + "</div>";
+      marker.bindPopup(popupContent);
+      if (String(user.id) === currentUserId) {
+        // Highlight the current user's marker with a red circle.
+        L.circleMarker([user.lat, user.lon], {radius: 10, color: 'red'}).addTo(map);
+      }
+    });
+    
+    // Adjust the map view to fit all markers.
+    if (markers.length > 0) {
+      var group = new L.featureGroup(markers);
+      map.fitBounds(group.getBounds().pad(0.2));
+    }
+  }
+  
+  // Call the initialization function on first load.
+  document.addEventListener("DOMContentLoaded", initializeAllUsersMap);
+</script>
+{% endblock %}
